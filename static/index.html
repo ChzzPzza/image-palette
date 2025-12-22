@@ -1,0 +1,26 @@
+<!-- static/index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Image → Harmonized Palette</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <div class="left">
+      <button id="uploadBtn">Upload image</button>
+      <input id="fileInput" type="file" accept="image/*" hidden />
+      <div id="meta"></div>
+    </div>
+    <div class="right" id="paletteList"></div>
+  </header>
+
+  <main>
+    <canvas id="c"></canvas>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
