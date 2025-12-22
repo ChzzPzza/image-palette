@@ -5,6 +5,7 @@ const ctx = canvas.getContext("2d");
 const uploadBtn = document.getElementById("uploadBtn");
 const fileInput = document.getElementById("fileInput");
 const paletteList = document.getElementById("paletteList");
+const exportBtn = document.getElementById("exportBtn");
 const meta = document.getElementById("meta");
 
 let img = new Image();
@@ -19,6 +20,25 @@ let selStart = null; // {x,y}
 let selRect = null;  // {x,y,w,h}
 let antsOffset = 0;
 let rafId = null;
+
+function hexNoHash(hex) {
+  return (hex || "").replace("#", "");
+}
+
+async function copyText(text) {
+  // clipboard API first, fallback if blocked
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch {}
+
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
 
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
@@ -43,6 +63,7 @@ fileInput.addEventListener("change", async (e) => {
     meta.textContent = "Extracting palette…";
     palette = await fetchPalette(file);
     meta.textContent = palette?.scheme ? `Scheme: ${palette.scheme}` : (palette?.error || "");
+    exportBtn.disabled = !!palette?.error || !palette;
     renderPaletteList(palette);
     selRect = null;
     draw();
@@ -286,10 +307,39 @@ function renderPaletteList(p) {
       <div class="hex">${it.hex}</div>
     `;
     el.addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(it.hex); } catch {}
+      await copyText(hexNoHash(it.hex));
     });
     paletteList.appendChild(el);
   }
 }
+
+function exportPaletteTxt(p) {
+  const items = paletteToItems(p);
+  if (!items.length) return;
+
+  const lines = items.map(it => `${it.role}: ${hexNoHash(it.hex)}`);
+  const content = lines.join("\n") + "\n";
+
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+
+  const ts = new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .replace("T", "_")
+    .replace("Z", "");
+
+  const filename = `palette_${ts}.txt`;
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  document.body.removeChild(a);
+}
+
+// Wire up the export button
+exportBtn.addEventListener("click", () => exportPaletteTxt(palette));
 
 resizeCanvas();
